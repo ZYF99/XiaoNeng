@@ -81,10 +81,10 @@ public class DetailActivity extends AppCompatActivity {
         barChart.getXAxis().setValueFormatter(new ValueFormatter(){
             @Override
             public String getFormattedValue(float value) {
-                if(((value/0.5f)%2 == 1)){ //0.5 1.5 2.5
+/*                if(((value/0.5f)%2 == 1)){ //0.5 1.5 2.5
                     return String.valueOf(value+0.5);
-                }
-                return "";
+                }*/
+                return String.valueOf(value);
             }
         });
         barChart.setDescription(null);
@@ -177,8 +177,9 @@ public class DetailActivity extends AppCompatActivity {
 
             barChart.setData(data);
             barChart.invalidate();
-            barChart.getXAxis().setSpaceMax(1f);
-            barChart.invalidate();
+            barChart.getXAxis().setSpaceMax(2f);
+            barChart.getData().notifyDataChanged();
+            barChart.notifyDataSetChanged();
         }
     }
 
