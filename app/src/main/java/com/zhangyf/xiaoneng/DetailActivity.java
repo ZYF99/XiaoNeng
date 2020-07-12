@@ -4,6 +4,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -15,6 +16,9 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.formatter.DefaultValueFormatter;
+import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.orhanobut.hawk.Hawk;
 
@@ -40,12 +44,12 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
         barChart = findViewById(R.id.bar_chart);
         final String studentId = getIntent().getStringExtra(STUDENT_ID_KEY);
-        if (studentId!=null){
+        if (studentId != null) {
             //通过id找学生
-            ((List<Student>)Hawk.get(STUDENT_LIST_KEY)).forEach(new Consumer<Student>() {
+            ((List<Student>) Hawk.get(STUDENT_LIST_KEY)).forEach(new Consumer<Student>() {
                 @Override
                 public void accept(Student student) {
-                    if(student.getId() .equals(studentId) ){
+                    if (student.getId().equals(studentId)) {
                         globalStudent = student;
                     }
                 }
@@ -53,57 +57,6 @@ public class DetailActivity extends AppCompatActivity {
             //画图表
             setHBarChartData(globalStudent.getIssueList());
         }
-
-    }
-
-    private void setUpLineChart(){
-        /***图表设置***/
-        //背景颜色
-        barChart.setBackgroundColor(Color.WHITE);
-        //不显示图表网格
-        barChart.setDrawGridBackground(false);
-
-        //显示边框
-        barChart.setDrawBorders(true);
-        //设置动画效果
-//        lineChart.animateY(1000,);
-//        lineChart.animateX(1000,);
-
-        /***XY轴的设置***/
-        //X轴设置显示位置在底部
-        XAxis xAxis = barChart.getXAxis();
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-//        xAxis.setAxisMinimum(0f);
-//        xAxis.setGranularity(1f);
-
-        YAxis leftAxis = barChart.getAxisLeft();
-        YAxis rightAxis = barChart.getAxisRight();
-        //保证Y轴从0开始，不然会上移一点
-//        leftAxis.setAxisMinimum(0f);
-//        rightAxis.setAxisMinimum(0f);
-
-        /***折线图例 标签 设置***/
-        Legend legend = barChart.getLegend();
-        legend.setForm(Legend.LegendForm.LINE);
-        legend.setTextSize(11f);
-        //显示位置
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
-        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-        //是否绘制在图表里面
-        legend.setDrawInside(false);
-
-        //不显示表边框
-        barChart.setDrawBorders(false);
-//        不显示右下角描述内容
-        Description description = new Description();
-        description.setEnabled(false);
-        barChart.setDescription(description);
-//        不显示X轴 Y轴线条
-        xAxis.setDrawAxisLine(false);
-        leftAxis.setDrawAxisLine(false);
-        rightAxis.setDrawAxisLine(false);
-        leftAxis.setEnabled(false);
 
     }
 
@@ -120,11 +73,23 @@ public class DetailActivity extends AppCompatActivity {
         final ArrayList<BarEntry> averageYValues = new ArrayList<>();
 
         barChart.getAxisRight().setEnabled(false);
-        barChart.setDragEnabled(false);
-barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-barChart.setDescription(null);
+
+        barChart.getXAxis().setAxisMinimum(0f);
+
+
+        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        barChart.getXAxis().setValueFormatter(new ValueFormatter(){
+            @Override
+            public String getFormattedValue(float value) {
+                if(((value/0.5f)%2 == 1)){ //0.5 1.5 2.5
+                    return String.valueOf(value+0.5);
+                }
+                return "";
+            }
+        });
+        barChart.setDescription(null);
         //平均数据
-        final HashMap<Integer,Integer> issueStatusMap = new HashMap<>();
+        final HashMap<Integer, Integer> issueStatusMap = new HashMap<>();
         students.forEach(new Consumer<Student>() {
             @Override
             public void accept(Student student) {
@@ -133,22 +98,22 @@ barChart.setDescription(null);
                     public void accept(Issue issue) {
                         int originValue;
                         try {
-                            originValue= issueStatusMap.get(issue.getId());
-                        }catch (Exception e){
+                            originValue = issueStatusMap.get(issue.getId());
+                        } catch (Exception e) {
                             originValue = 0;
                         }
-                        issueStatusMap.put(issue.getId(),originValue+issue.getStatus());
+                        issueStatusMap.put(issue.getId(), originValue + issue.getStatus());
                     }
                 });
             }
         });
         //真实的平均数据
-        final List<IntFloatPair>averageList =new ArrayList<>();
+        final List<IntFloatPair> averageList = new ArrayList<>();
         issueStatusMap.forEach(new BiConsumer<Integer, Integer>() {
             @Override
             public void accept(Integer integer, Integer integer2) {
                 ;
-                averageList.add(new IntFloatPair(integer,Float.parseFloat(txfloat(integer2,studentNum))));
+                averageList.add(new IntFloatPair(integer, Float.parseFloat(txfloat(integer2, studentNum))));
             }
         });
 
@@ -165,7 +130,7 @@ barChart.setDescription(null);
         averageList.forEach(new Consumer<IntFloatPair>() {
             @Override
             public void accept(IntFloatPair intFloatPair) {
-                averageYValues.add(new BarEntry(intFloatPair.getValue1(),intFloatPair.getValue2()));
+                averageYValues.add(new BarEntry(intFloatPair.getValue1(), intFloatPair.getValue2()));
             }
         });
 
@@ -186,30 +151,40 @@ barChart.setDescription(null);
 
             personalSet.setColor(Color.BLUE);
             averageSet.setColor(Color.YELLOW);
+
             personalSet.setDrawIcons(false);
             averageSet.setDrawIcons(false);
             ArrayList<IBarDataSet> dataSets = new ArrayList<>();
             dataSets.add(personalSet);
             dataSets.add(averageSet);
             BarData data = new BarData(dataSets);
- /*           data.setValueTextSize(10f);
-            data.setBarWidth(0.5f);*/
-            int barAmount = 2; //需要显示柱状图的类别 数量
-//设置组间距占比30% 每条柱状图宽度占比 70% /barAmount  柱状图间距占比 0%
-            float groupSpace = 0.3f; //柱状图组之间的间距
-            float barSpace = 0f;
-            float barWidth = (1f - groupSpace) / barAmount;
-            //设置柱状图宽度
-            data.setBarWidth(barWidth);
+
+            int barAmount = dataSets.size(); //需要显示柱状图的类别 数量//设置组间距占比30% 每条柱状图宽度占比 70% /barAmount  柱状图间距占比 0%
+
+/*            barChart.getXAxis().resetAxisMaximum();
+            barChart.getXAxis().resetAxisMinimum();*/
+            barChart.getXAxis().setGranularity(0.5f);
+            barChart.getAxisLeft().setGranularity(0.5f);
+            float groupSpace = 0f; //柱状图组之间的间距
+            float barWidth = 0.5f;
+            float barSpace = 0f;//设置柱状图宽度
+            data.setBarWidth(barWidth);//(起始点、柱状图组间距、柱状图之间间距)
             data.groupBars(0f, groupSpace, barSpace);
+
+
+
+
+
             barChart.setData(data);
+            barChart.invalidate();
+            barChart.getXAxis().setSpaceMax(1f);
+            barChart.invalidate();
         }
     }
-    public static String txfloat(int a,int b) {
-        DecimalFormat df=new DecimalFormat("0.00");//设置保留位数
 
-        return df.format((float)a/b);
-
+    public static String txfloat(int a, int b) {
+        DecimalFormat df = new DecimalFormat("0.00");//设置保留位数
+        return df.format((float) a / b);
     }
 
 }
